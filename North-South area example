@@ -1,0 +1,119 @@
+#Code snippet to apply simple ecological analysis on an area
+
+##This example imagines a sampled locale split into North and South sub-locales, and the indices are calculated accordingly##
+#community dataset
+
+# Load the community data with the read.table() function
+getwd()
+x<-read.table(file.choose(), sep=";" ,dec=",", header=T)
+# Checking the loaded data
+dim(x)
+names(x)
+attach(x)
+head(x)
+structure(x)
+summary(x)
+x <- edit(x)
+
+# Table with species only 
+z<-x[1:65,11:139]
+dim(z)
+
+# Create two separate tables for each slope with the subset() function
+south<-subset(x, versant=="S")
+north<-subset(x, versant=="N")
+
+# Table with species only 
+zsud<-south[,11:139]
+znord<-north[,11:139]
+
+names(znord)
+dim(zsud)
+dim(znord)
+
+#Construction of species matrix
+require(ade4)
+z <- edit(z)
+
+#Accumulation curves for the areas
+require(vegan)
+sp2 <- specaccum(z, "random", permutations=72)
+plot(sp2, ci.type="poly", col="blue", lwd=2, ci.lty=0, ci.col="lightblue")
+
+sp2 <- specaccum(znord, "random", permutations=48)
+plot(sp2, ci.type="poly", col="blue", lwd=2, ci.lty=0, ci.col="lightblue")
+
+sp2 <- specaccum(zsud, "random", permutations=72)
+plot(sp2, ci.type="poly", col="blue", lwd=2, ci.lty=0, ci.col="lightblue")
+
+ # Calculation of primary indices
+
+#Specific richness S
+sr<-specnumber(z,MARGIN=1)
+
+#north/south
+srn<-specnumber(znord,MARGIN=1)
+srs<-specnumber(zsud,MARGIN=1)
+
+# Total number of individuals N, and abundance of dominant species Nmax, per quadra
+N<-apply(z,1,sum)
+Nmax<-apply(z,1, max)
+
+#north/south
+Nnorth<-apply(znord,1,sum)
+Nmaxnorth<-apply(znord,1, max)
+
+Ns<-apply(zsud,1,sum)
+Nmaxs<-apply(zsud,1, max)
+
+# Berger-Parker index
+bg<-Nmax/N
+
+#north/south
+bgn<-Nmaxnorth/Nnorth
+bgs<-Nmaxs/Ns
+
+# proportion p of each species per sample
+p<-z/N
+p<-as.matrix(p)
+#north/south
+
+# Simpson's heterogeneous (RS+evenness) index (unbiased) PIE: (n/n-1) x 1-D
+simpc <- (N/(N-1))*diversity(z, "simpson")
+
+#north/south
+simpcn <- (Nnorth/(Nnorth-1))*diversity(znord, "simpson")
+simpcs <- (Ns/(Ns-1))*diversity(zsud, "simpson")
+
+# Simpson 1-D / (1- 1/S) Evenness
+esimp<-diversity(z, "simpson")/(1-(1/sr))
+
+#North/south
+esimpn<-diversity(znord, "simpson")/(1-(1/srn))
+esimps<-diversity(zsud, "simpson")/(1-(1/srs))
+#Further indices
+diversity(z, index = "shannon")
+H <- diversity(z) #shannon
+
+#north/south
+Hn <- diversity(znord) #shannon
+Hs <- diversity(zsud) #shannon
+J <- H/log(specnumber(z)) #pielou
+#north/south
+Jn <- Hn/log(specnumber(znord)) #pielou
+Js <- Hs/log(specnumber(zsud)) #pielou
+
+#comparing means with t-tests
+t.test(srs, srn) #Species Richness S
+t.test(bgs, bgn) #Berger-Parker test
+t.test(esimps, esimpn) #Simpson 1-D index
+t.test(simpcs, simpcn) #Simpson heterogeneous index
+t.test(Hs, Hn) #shannon index
+t.test(Js, Jn) #Pielou index
+
+#Boxplots to study the effect of slope parameter
+par(mfrow=c(2,2))
+boxplot(sr~slope)
+boxplot(bg~slope)
+boxplot(simpc~slope)
+boxplot(esimp~slope)
