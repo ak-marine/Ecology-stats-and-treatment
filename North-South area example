@@ -2,7 +2,9 @@
 
 ##This example imagines a sampled locale split into North and South sub-locales, and the indices are calculated accordingly##
 #community dataset
-
+library(dplyr)
+library(vegan)
+library(tidyverse)
 # Load the community data with the read.table() function
 getwd()
 x<-read.table(file.choose(), sep=";" ,dec=",", header=T)
